@@ -1,0 +1,63 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+
+Vagrant.configure("2") do |config|
+    config.vm.network :forwarded_port, guest: 3306, host: 3306, auto_correct: true
+    config.vm.network :forwarded_port, guest: 5000, host: 5000, auto_correct: true
+    config.vm.network :forwarded_port, guest: 9500, host: 9500, auto_correct: true
+
+    (1 .. 9).each do |i|
+      outsidePath = ENV["SYNC_OUTSIDE_#{i}"]
+      insidePath = ENV["SYNC_INSIDE_#{i}"]
+      if outsidePath!=nil && outsidePath!="" && insidePath!=nil && insidePath!="" 
+        #print "#{i} = #{rootPath}\n"
+        config.vm.synced_folder outsidePath, insidePath
+      end
+    end
+
+    config.vm.box = "dummy" 
+
+    config.vm.provider :aws do |aws, override|
+      #iam console users, give each user AmazonEC2FullAccess policy
+      aws.access_key_id = "AKIAJJYZWYA6HAVO2X3A"
+      aws.secret_access_key = "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"
+
+      #each person needs their own key pair for accessing the server, should be chmod 600
+      override.ssh.private_key_path = "~/.ssh/vagrant_mf.pem"
+      aws.keypair_name = "vagrant_mf"
+      #this needs to be the username that the linux image expects
+      override.ssh.username = "ubuntu"
+
+      #lookup a appropriate image here http://cloud-images.ubuntu.com/locator/ec2/
+      #ap-southeast-2 hvm:ebs-ssd trusty
+      aws.ami = "ami-c5611cff"
+
+      #these prices just here as a guide
+      #t2.micro  1 Variable  1 EBS Only  $0.020 per Hour
+      #t2.small  1 Variable  2 EBS Only  $0.040 per Hour
+      #t2.medium 2 Variable  4 EBS Only  $0.080 per Hour
+      #m3.medium 1 3      3.75 1 x 4 SSD $0.098 per Hour
+      aws.instance_type = "m3.medium"
+      aws.region="ap-southeast-2"
+
+      aws.tags = {
+        Name: 'vagrant_trusty'
+      }
+
+      #create a separate security group for this vm that lets through ssh (port 22)
+      aws.security_groups = [ 'vagrant' ]
+
+      #run ssh -vvv -i 
+    end
+
+        #this installs docker onto the box
+    config.vm.provision "docker" do |docker|
+
+    end
+
+    #sudo apt-get update && sudo apt-get install linux-image-generic-lts-trusty
+    #sudo apt-get install docker
+
+end
+
