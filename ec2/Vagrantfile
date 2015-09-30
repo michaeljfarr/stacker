@@ -19,9 +19,9 @@ Vagrant.configure("2") do |config|
     config.vm.box = "dummy" 
 
     config.vm.provider :aws do |aws, override|
-      #iam console users, give each user AmazonEC2FullAccess policy
-      aws.access_key_id = "AKIAJJYZWYA6HAVO2X3A"
-      aws.secret_access_key = "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"
+      #create an iam console users, give them sufficient access to create machines
+      aws.access_key_id = ""
+      aws.secret_access_key = ""
 
       #each person needs their own key pair for accessing the server, should be chmod 600
       override.ssh.private_key_path = "~/.ssh/vagrant_mf.pem"
